@@ -16,8 +16,8 @@
 * Allows relocate any file to a directory.
 
 ### Usage Examples
-- [Download Example](docs/download_example.md)
-- [Relocation Example](docs/relocation_example.md)
+- [Download Example](download_example.md)
+- [Relocation Example](relocation_example.md)
 
 ### Download
 ```kotlin
