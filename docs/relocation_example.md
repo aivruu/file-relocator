@@ -1,7 +1,6 @@
 # How to use the relocation feature?
 The library also provides a utility to relocate existing files to another directories in the system.
 
-## Sync way
 ```java
 void main(String[] args) {
   final var fileRelocationStatus = FilesRelocationUtils.relocateTo(
