@@ -2,7 +2,6 @@
 The library offers the possibility of download files since URL's, any URL'S that aims to a 
 downloadable file can be used, this can be done of sync or async way, depending on your necessities.
 
-## Sync way
 ```java
 void main(String[] args) {
   final var fileDownloader = FileDownloader.builder()
