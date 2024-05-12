@@ -48,7 +48,7 @@ public final class FilesRelocationUtils {
    * @since 0.0.1
    */
   public static boolean relocateTo(final @NotNull String previousDirectory, final @NotNull String nextDirectory,
-                                   final boolean replaceExistingFile) {
+                                   final boolean replaceExistingFile, final boolean deletePreviousFile) {
     // First at all, we need to get the Path reference for the given directories
     // to could handle their relocation.
     final var previousDirectoryAsPath = Paths.get(previousDirectory);
@@ -65,6 +65,11 @@ public final class FilesRelocationUtils {
         Files.move(previousDirectoryAsPath, nextDirectoryAsPath, StandardCopyOption.REPLACE_EXISTING);
       } else {
         Files.move(previousDirectoryAsPath, nextDirectoryAsPath);
+      }
+      // If the user has preferred delete the previous file after the relocation, we will
+      // do it only if the file still exists in the directory.
+      if (deletePreviousFile) {
+        Files.deleteIfExists(previousDirectoryAsPath);
       }
       // If any exception is triggered during these operations, then we can confirm that the
       // relocation was successful.
