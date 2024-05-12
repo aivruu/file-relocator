@@ -11,7 +11,7 @@ void main(String[] args) {
       .build(); // Creates a new file downloader object.
   // This class offers two methods to perform the file download, one sync, and another async
   // Their usage depending on your necessities, the available resources on the machine, or
-  // the size of the file to download (but, all we know that anyone is going to download a 50 GB file using this, :8).
+  // the size of the file to download (but we know that nobody will download a 50 GB file using this, :8).
   final var syncDownloadStatus = fileDownloader.downloadFileSync(); // The file will be downloaded using the current thread.
   final var asyncDownloadStatus = fileDownloader.downloadFileAsync(); // The file will be downloaded using another thread for the process.
   // Both methods return boolean states, so you can check if the file was downloaded correctly.
