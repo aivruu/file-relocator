@@ -22,8 +22,9 @@
  */
 package me.qeklydev.relocator;
 
+import me.qeklydev.relocator.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
-import java.net.http.HttpClient;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * This class is used to perform files download since the
@@ -31,20 +32,7 @@ import java.net.http.HttpClient;
  *
  * @since 0.0.1
  */
-public final class FileDownloader {
-  private final HttpClient httpClient;
-  private final String provider;
-  private final String destinationDirectory;
-  private final boolean mustBeReplaced;
-
-  private FileDownloader(final @NotNull HttpClient httpClient, final @NotNull String provider,
-                         final @NotNull String destinationDirectory, final boolean mustBeReplaced) {
-    this.httpClient = httpClient;
-    this.provider = provider;
-    this.destinationDirectory = destinationDirectory;
-    this.mustBeReplaced = mustBeReplaced;
-  }
-
+public record FileDownloader(@NotNull String fileName, @NotNull String provider, boolean mustBeReplaced) {
   /**
    * Creates a new builder for the file downloader object.
    *
@@ -59,14 +47,35 @@ public final class FileDownloader {
    * Downloads the file since the given URL to the specified directory
    * for download destination.
    *
-   * @param sync indicates if the download process must be processed
-   *             over the main thread, or async way.
+   * @return The boolean state for this operation, {@code true} if the
+   * file was downloaded and relocated correctly. Otherwise {@code false}.
+   * @see IOUtils#writeSync(String, String)
    * @since 0.0.1
    */
-  public void downloadFile(final boolean sync) {
-    // First at all, we need to create a new request for the given URL, and
-    // then extract data for the file download process.
+  public boolean downloadFileSync() {
+    final var fileBytesWritingStatus = IOUtils.writeSync(this.fileName, this.provider);
+    // If the bytes read amount is zero, indicates that something went wrong
+    // during writing process and the file could not be downloaded correctly,
+    // so we return a [ false ] boolean state for this operation.
+    return fileBytesWritingStatus > IOUtils.SINGLE_RETURN_VALUE;
+  }
 
+  /**
+   * Downloads the file of async way, since the given URL to the specified directory
+   * for download destination.
+   *
+   * @return The {@link CompletableFuture} for this operation with the final
+   * supply for the internal download operation, this supply is a boolean state
+   * that represents the final status for the async operation, check the
+   * downloadFileSync description to understand internal method functions.
+   * @see FileDownloader#downloadFileSync()
+   * @since 0.0.1
+   */
+  public @NotNull CompletableFuture<@NotNull Boolean> downloadFileAsync() {
+    // The executor for downloadFileSync(...) is the same, there's the difference
+    // that this process is executed async way, so this will return a completable-future
+    // with the supply, once the async operation has completed and final result was provided.
+    return CompletableFuture.supplyAsync(this::downloadFileSync);
   }
 
   /**
@@ -75,27 +84,25 @@ public final class FileDownloader {
    * @since 0.0.1
    */
   public static class Builder {
-    private HttpClient httpClient;
+    private String fileName;
     private String url;
-    private String destinationDirectory;
     private boolean mustBeReplaced;
 
     /**
-     * Defines to the builder the http-client instance that will
-     * be used to perform the url request.
+     * Defines to the builder the name that will receive the file
+     * once have been downloaded.
      *
-     * @param httpClient the http-client instance.
+     * @param fileName the name for the downloaded file.
      * @return The current builder instance.
      * @since 0.0.1
      */
-    public @NotNull Builder client(final @NotNull HttpClient httpClient) {
-      this.httpClient = httpClient;
+    public @NotNull Builder name(final @NotNull String fileName) {
+      this.fileName = fileName;
       return this;
     }
 
     /**
-     * Defines the URL necessary to create an HTTP-request and download
-     * the needed file.
+     * Defines the url for download the file.
      *
      * @param url the file url.
      * @return The current builder instance.
@@ -103,20 +110,6 @@ public final class FileDownloader {
      */
     public @NotNull Builder url(final @NotNull String url) {
       this.url = url;
-      return this;
-    }
-
-    /**
-     * Defines to the builder the destination directory for the
-     * downloaded file.
-     *
-     * @param destinationDirectory the destination location where
-     *                             the file will be downloaded.
-     * @return The current builder instance.
-     * @since 0.0.1
-     */
-    public @NotNull Builder destination(final @NotNull String destinationDirectory) {
-      this.destinationDirectory = destinationDirectory;
       return this;
     }
 
@@ -144,20 +137,15 @@ public final class FileDownloader {
      * @since 0.0.1
      */
     public @NotNull FileDownloader build() {
-      // We check if any [HttpClient] has been defined for the builder, this is
-      // necessary to perform request to the file URL, and start download for
-      // the file.
-      if (this.httpClient == null) {
-        throw new IllegalStateException("The FileDownloader.Builder instance requires a HttpClient to perform file download.");
-      }
-      // If the file url, or destination directory, or both are not defined for the
-      // builder, we throw an exception indicating the details for this.
-      if (this.url == null || this.destinationDirectory == null) {
-        throw new IllegalStateException("The file URL, or destination directory have not been defined on FileDownloader.Builder.");
+      // We check that the file-name, the file url, and the destination directory for the
+      // downloaded file were defined correctly on the builder, other-wise, we throw an
+      // exception indicating the details for the operation mishap.
+      if (this.fileName == null || this.url == null) {
+        throw new IllegalStateException("The file name, or file url have not been defined on FileDownloader.Builder.");
       }
       // If we have all the required information for the constructor, we can create a new
       // instance of [FileDownloader], this will be used to perform file download.
-      return new FileDownloader(this.httpClient, this.url, this.destinationDirectory, this.mustBeReplaced);
+      return new FileDownloader(this.fileName, this.url, this.mustBeReplaced);
     }
   }
 }
